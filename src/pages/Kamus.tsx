@@ -131,7 +131,7 @@ export default function Kamus() {
       </div>
 
       {/* Filters */}
-      <div className="mt-4 flex gap-2 overflow-x-auto no-scrollbar pb-1">
+      <div className="mt-4 flex gap-2 overflow-x-auto no-scrollbar pb-1 -mx-4 px-4 sm:mx-0 sm:px-0">
         {filters.map((f) => (
           <button
             key={f.key}
@@ -154,7 +154,7 @@ export default function Kamus() {
 
       <div className="grid lg:grid-cols-[1fr_1.1fr] gap-5">
         {/* List */}
-        <div className="space-y-2.5">
+        <div className="space-y-2.5 min-w-0">
           {results.length === 0 && (
             <Card>
               <EmptyState
@@ -193,7 +193,7 @@ export default function Kamus() {
         </div>
 
         {/* Detail (desktop) */}
-        <Card className="hidden lg:block p-6 sticky top-6 h-fit">
+        <Card className="hidden lg:block p-6 sticky top-6 h-fit min-w-0">
           {detail(selected)}
         </Card>
       </div>

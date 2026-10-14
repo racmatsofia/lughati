@@ -56,13 +56,15 @@ export function PublicLayout() {
             ))}
           </nav>
           <div className="flex items-center gap-2">
-            <ThemeToggle className="hidden sm:grid" />
-            <Link to="/masuk" className={cn(buttonClasses("ghost", "md"), "hidden sm:inline-flex")}>
-              Masuk
-            </Link>
-            <Link to={user ? "/app/belajar" : "/daftar"} className={buttonClasses("primary", "md")}>
-              {user ? "Buka Aplikasi" : "Coba Gratis"}
-            </Link>
+            <div className="hidden sm:flex items-center gap-2">
+              <ThemeToggle />
+              <Link to="/masuk" className={buttonClasses("ghost", "md")}>
+                Masuk
+              </Link>
+              <Link to={user ? "/app/belajar" : "/daftar"} className={buttonClasses("primary", "md")}>
+                {user ? "Buka Aplikasi" : "Coba Gratis"}
+              </Link>
+            </div>
             <button
               className="lg:hidden grid place-items-center w-10 h-10 rounded-full bg-surface-2"
               onClick={() => setOpen((o) => !o)}
@@ -79,8 +81,14 @@ export function PublicLayout() {
                 {l.label}
               </Link>
             ))}
-            <Link to="/masuk" className="py-3 font-semibold text-brand">
+            <Link to="/masuk" className="py-3 font-semibold text-brand border-b border-line/60">
               Masuk
+            </Link>
+            <Link
+              to={user ? "/app/belajar" : "/daftar"}
+              className="mt-2 inline-flex justify-center rounded-full bg-brand px-5 py-3 font-bold text-white"
+            >
+              {user ? "Buka Aplikasi" : "Coba Gratis"}
             </Link>
           </div>
         )}

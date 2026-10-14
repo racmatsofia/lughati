@@ -47,14 +47,16 @@ npm run build      # build produksi ke ./dist
 npm run preview    # pratinjau hasil build
 ```
 
-## ☁️ Deploy ke Cloudflare Pages
+## ☁️ Deploy ke Cloudflare
+
+Aplikasi dideploy sebagai **Cloudflare Worker dengan Static Assets** (SPA fallback via `wrangler.jsonc`).
 
 ```bash
 npm run build
-npx wrangler pages deploy dist --project-name=lughati
+npx wrangler deploy
 ```
 
-Fallback SPA sudah disiapkan di `public/_redirects`.
+Set `CLOUDFLARE_API_TOKEN` dan `CLOUDFLARE_ACCOUNT_ID` sebagai environment variable sebelum deploy.
 
 ## 📁 Struktur
 

@@ -239,10 +239,10 @@ export default function Dashboard() {
               {Array.from({ length: 7 }).map((_, i) => {
                 const day = new Date(Date.now() - (6 - i) * 86400000);
                 const xp = progress.history.find((h) => h.date === todayKey(day))?.xp ?? 0;
-                const h = Math.max(6, (xp / weekMax) * 100);
+                const h = Math.max(4, Math.round((xp / weekMax) * 74));
                 return (
                   <div key={i} className="flex-1 flex flex-col items-center gap-1.5">
-                    <div className="w-full rounded-t-lg bg-brand/80 transition-all" style={{ height: `${h}%` }} />
+                    <div className="w-full rounded-t-lg bg-brand/80 transition-all" style={{ height: `${h}px` }} />
                     <span className="text-[10px] text-fg-subtle">
                       {["S", "S", "R", "K", "J", "S", "M"][day.getDay()]}
                     </span>

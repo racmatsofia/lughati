@@ -24,3 +24,9 @@ Thumbs.db
 
 # build info
 *.tsbuildinfo
+
+# screenshot hasil uji lokal
+.shots/
+
+.dev.vars*
+!.dev.vars.example

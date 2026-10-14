@@ -52,7 +52,7 @@ export default function ProgressPage() {
         <StatCard icon={<Target size={20} />} label="Kata dikuasai" value={`${progress.learnedWords.length}`} tone="brand" />
       </div>
 
-      <div className="mt-6 grid lg:grid-cols-[1.4fr_1fr] gap-5">
+      <div className="mt-6 grid lg:grid-cols-[1.4fr_1fr] gap-5 items-start">
         {/* Aktivitas 14 hari */}
         <Card className="p-6">
           <div className="flex items-center justify-between mb-1">
@@ -65,7 +65,7 @@ export default function ProgressPage() {
 
           <div className="mt-6 flex items-end justify-between gap-1.5 h-40">
             {last14.map((d) => {
-              const h = Math.max(4, (d.xp / maxXp) * 100);
+              const h = Math.max(4, Math.round((d.xp / maxXp) * 130));
               const isToday = d.key === today;
               return (
                 <div key={d.key} className="flex-1 flex flex-col items-center gap-2">
@@ -74,7 +74,7 @@ export default function ProgressPage() {
                       "w-full rounded-lg transition-all",
                       isToday ? "bg-gold" : d.xp > 0 ? "bg-brand" : "bg-surface-2",
                     )}
-                    style={{ height: `${d.xp > 0 ? h : 4}%` }}
+                    style={{ height: `${d.xp > 0 ? h : 4}px` }}
                     title={`${d.key}: ${d.xp} XP`}
                   />
                   <span className="text-[10px] text-fg-subtle">{d.date.getDate()}</span>
