@@ -15,14 +15,15 @@ const store = {
   settings: { theme: "light", translit: true, harakat: true, rate: 1, lang: "id", reminders: true, remindAt: "19:30", soundEffects: true },
 };
 const shots = [
-  ["dashboard", "/app/belajar", 1280, 900],
-  ["progres", "/app/progres", 1280, 1000],
+  ["latihan", "/app/latihan", 1280, 980],
+  ["sertifikat", "/app/sertifikat", 1280, 1100],
+  ["kelas-guru", "/kelas", 1280, 980],
+  ["profil", "/app/profil", 1280, 1150],
   ["kamus", "/app/kamus", 1280, 900],
-  ["landing-mobile", "/", 390, 844],
-  ["dashboard-mobile", "/app/belajar", 390, 844],
+  ["berbicara", "/app/berbicara", 1280, 900],
+  ["latihan-mobile", "/app/latihan", 390, 844],
+  ["sertifikat-mobile", "/app/sertifikat", 390, 844],
   ["kamus-mobile", "/app/kamus", 390, 844],
-  ["latihan", "/app/latihan", 1280, 900],
-  ["pencapaian", "/app/pencapaian", 1280, 900],
 ];
 const list = await (await fetch(`${CDP}/json/list`)).json();
 const page = list.find((t) => t.type === "page");

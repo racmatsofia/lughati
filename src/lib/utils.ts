@@ -1,5 +1,12 @@
+import { twMerge } from "tailwind-merge";
+
+/**
+ * Gabungkan className dengan aman: tailwind-merge memastikan utility yang
+ * bertabrakan (mis. `bg-surface` vs `bg-brand`, `hidden` vs `inline-flex`)
+ * mengikuti kelas TERAKHIR, bukan urutan di CSS.
+ */
 export function cn(...parts: Array<string | false | null | undefined>): string {
-  return parts.filter(Boolean).join(" ");
+  return twMerge(parts.filter(Boolean).join(" "));
 }
 
 export function todayKey(d = new Date()): string {

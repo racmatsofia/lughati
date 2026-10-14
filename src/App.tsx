@@ -17,6 +17,8 @@ import Progress from "./pages/Progress";
 import Leaderboard from "./pages/Leaderboard";
 import Achievements from "./pages/Achievements";
 import Profile from "./pages/Profile";
+import Speaking from "./pages/Speaking";
+import Certificate from "./pages/Certificate";
 import Teacher from "./pages/Teacher";
 import Pricing from "./pages/Pricing";
 import About from "./pages/About";
@@ -46,6 +48,7 @@ export default function App() {
         <Route path="/app/pelajaran/:moduleId/:lessonId" element={<Lesson />} />
         <Route path="/app/hijaiyah" element={<Hijaiyah />} />
         <Route path="/app/kamus" element={<Kamus />} />
+        <Route path="/app/berbicara" element={<Speaking />} />
         <Route path="/app/flashcard" element={<Flashcard />} />
         <Route path="/app/cerita" element={<Stories />} />
         <Route path="/app/latihan" element={<Games />} />
@@ -53,6 +56,7 @@ export default function App() {
         <Route path="/app/peringkat" element={<Leaderboard />} />
         <Route path="/app/pencapaian" element={<Achievements />} />
         <Route path="/app/profil" element={<Profile />} />
+        <Route path="/app/sertifikat" element={<Certificate />} />
       </Route>
 
       <Route path="*" element={<NotFound />} />

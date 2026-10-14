@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Navigate, useNavigate, useParams, Link } from "react-router-dom";
 import { ArrowRight, Check, Heart, RotateCcw, Snail, Volume2, X } from "lucide-react";
-import { HIJAIYAH, WORDS, moduleById, wordById, type Lesson as LessonType, type Module, type Word } from "../lib/data";
+import { HIJAIYAH, WORDS, moduleById, wordById, stripHarakat, type Lesson as LessonType, type Module, type Word } from "../lib/data";
 import { SpeakerButton, Waveform } from "../components/audio";
 import { Button, Card, ProgressBar, Ring, buttonClasses } from "../components/ui";
 import { Confetti, Mascot } from "../components/brand";
@@ -10,7 +10,7 @@ import { useSpeaker } from "../components/audio";
 import { cn } from "../lib/utils";
 
 type Q = {
-  kind: "meaning" | "word" | "listen" | "letter";
+  kind: "meaning" | "word" | "listen" | "letter" | "susun" | "harakat";
   promptAr?: string;
   promptText?: string;
   translit?: string;
@@ -83,6 +83,41 @@ function buildQuestions(lesson: LessonType, mod: Module): Q[] {
       wordId: w.id,
       hint: "Dengarkan pelan-pelan bila perlu",
     });
+
+    // 3) isi harakat (kata tunggal)
+    if (!w.ar.includes(" ") && w.ar.length > 2) {
+      const bare = stripHarakat(w.ar);
+      const variants = [
+        bare,
+        w.ar.replace(/\u064E/g, "\u0650"),
+        w.ar.replace(/\u064F/g, "\u064E"),
+        w.ar.replace(/\u0650/g, "\u064F"),
+      ].filter((v) => v !== w.ar);
+      qs.push({
+        kind: "harakat",
+        promptAr: bare,
+        promptText: w.meaning,
+        audio: w.ar,
+        answer: w.ar,
+        choices: shuffle([w.ar, ...shuffle(variants).slice(0, 3)], i + 37),
+        wordId: w.id,
+        hint: "Pilih harakat yang tepat",
+      });
+    }
+
+    // 4) susun kalimat (bila ada contoh)
+    const tokens = w.example?.ar.split(/\s+/).filter(Boolean) ?? [];
+    if (tokens.length >= 3) {
+      qs.push({
+        kind: "susun",
+        promptText: w.example!.meaning,
+        audio: w.example!.ar,
+        answer: tokens.join(" "),
+        choices: shuffle(tokens, i + 61),
+        wordId: w.id,
+        hint: "Susun kata menjadi kalimat yang benar",
+      });
+    }
   });
 
   return qs;
@@ -106,6 +141,7 @@ export default function Lesson() {
   const [done, setDone] = useState(false);
   const [showBreak, setShowBreak] = useState(false);
   const [showConfetti, setShowConfetti] = useState(false);
+  const [built, setBuilt] = useState<number[]>([]);
   const autoplayRef = useRef(0);
 
   const q = questions[index];
@@ -150,6 +186,7 @@ export default function Lesson() {
     }
     setIndex((i) => i + 1);
     setPicked(null);
+    setBuilt([]);
   }
 
   function finish() {
@@ -160,6 +197,23 @@ export default function Lesson() {
     setDone(true);
     setShowConfetti(true);
     setTimeout(() => setShowConfetti(false), 2600);
+  }
+
+  function tapSusun(i: number) {
+    if (answered || built.includes(i)) return;
+    const nextBuilt = [...built, i];
+    setBuilt(nextBuilt);
+    if (nextBuilt.length === q.choices.length) {
+      const text = nextBuilt.map((bi) => q.choices[bi]).join(" ");
+      const ok = text === q.answer;
+      setPicked(ok ? q.answer : `__wrong__:${text}`);
+      if (ok) setCorrectCount((c) => c + 1);
+      else {
+        setHearts((h) => h - 1);
+        setWeak((w) => (w.includes(q.wordId!) ? w : [...w, q.wordId!]));
+        if (q.wordId) markWeak(q.wordId);
+      }
+    }
   }
 
   /* ------------------------------ Summary ------------------------------ */
@@ -224,7 +278,10 @@ export default function Lesson() {
   }
 
   /* ------------------------------ Question ------------------------------ */
-  const bigArabic = q.kind === "listen" || q.kind === "word";
+  const arabicChoices = q.kind === "listen" || q.kind === "word" || q.kind === "harakat";
+  const twoCol = q.kind === "listen" || q.kind === "word";
+  const isSusun = q.kind === "susun";
+  const builtText = built.map((i) => q.choices[i]).join(" ");
 
   return (
     <div className="animate-fade-up max-w-2xl mx-auto">
@@ -264,66 +321,126 @@ export default function Lesson() {
             {q.promptAr}
           </button>
         )}
-        {q.promptText && <p className="font-display font-bold text-xl text-fg">{q.promptText}</p>}
+        {q.promptText && (
+          <p className={cn("font-display font-bold text-fg", q.promptAr ? "text-xl mt-2" : "text-2xl")}>
+            {q.promptText}
+          </p>
+        )}
 
-        <div className="mt-5 flex items-center justify-center gap-3">
-          <button
-            onClick={() => play(q.audio)}
-            className="grid place-items-center w-16 h-16 rounded-full bg-brand text-white hover:bg-brand-dark transition shadow-[0_8px_24px_rgb(14_124_123/0.35)]"
-            aria-label="Putar audio"
-          >
-            <Volume2 size={26} />
-          </button>
-          <button
-            onClick={() => play(q.audio, 0.6)}
-            className="inline-flex items-center gap-1.5 rounded-full bg-brand-light dark:bg-brand/25 px-4 py-2.5 text-sm font-bold text-brand-dark dark:text-white"
-          >
-            <Snail size={15} /> 0.75×
-          </button>
-        </div>
-
-        <p className="text-xs text-fg-subtle mt-4">Ketuk speaker untuk mendengar 🔊</p>
+        {!isSusun ? (
+          <>
+            <div className="mt-5 flex items-center justify-center gap-3">
+              <button
+                onClick={() => play(q.audio)}
+                className="grid place-items-center w-16 h-16 rounded-full bg-brand text-white hover:bg-brand-dark transition shadow-[0_8px_24px_rgb(14_124_123/0.35)]"
+                aria-label="Putar audio"
+              >
+                <Volume2 size={26} />
+              </button>
+              <button
+                onClick={() => play(q.audio, 0.6)}
+                className="inline-flex items-center gap-1.5 rounded-full bg-brand-light dark:bg-brand/25 px-4 py-2.5 text-sm font-bold text-brand-dark dark:text-white"
+              >
+                <Snail size={15} /> 0.75×
+              </button>
+            </div>
+            <p className="text-xs text-fg-subtle mt-4">Ketuk speaker untuk mendengar 🔊</p>
+          </>
+        ) : (
+          <p className="text-xs text-fg-subtle mt-3">Susun kata Arab sesuai arti di atas.</p>
+        )}
       </Card>
 
-      {/* Choices */}
-      <div className={cn("mt-5 grid gap-3", bigArabic ? "sm:grid-cols-2" : "")}>
-        {q.choices.map((c, i) => {
-          const isAnswer = c === q.answer;
-          const isPicked = c === picked;
-          return (
-            <button
-              key={c}
-              onClick={() => choose(c)}
-              disabled={answered}
-              className={cn(
-                "flex items-center gap-3 rounded-2xl border-2 p-4 text-left transition",
-                !answered && "bg-surface border-line hover:border-brand hover:bg-brand-light/30 dark:hover:bg-brand/10",
-                answered && isAnswer && "border-brand bg-brand-light/70 dark:bg-brand/20",
-                answered && isPicked && !isAnswer && "border-coral bg-coral-soft dark:bg-coral/20",
-                answered && !isAnswer && !isPicked && "border-line bg-surface opacity-60",
-              )}
-            >
-              <span
+      {/* Jawaban */}
+      {isSusun ? (
+        <>
+          <div
+            className={cn(
+              "mt-5 min-h-[80px] rounded-2xl border-2 border-dashed flex flex-wrap items-center justify-center gap-x-3 gap-y-2 p-4 transition",
+              !answered && "border-line bg-surface",
+              answered && picked === q.answer && "border-success bg-success-soft dark:bg-success/20",
+              answered && picked !== q.answer && "border-coral bg-coral-soft dark:bg-coral/20",
+            )}
+            dir="rtl"
+          >
+            {built.length === 0 ? (
+              <span className="text-sm text-fg-subtle" dir="ltr">
+                Ketuk kata di bawah untuk menyusun…
+              </span>
+            ) : (
+              built.map((bi, k) => (
+                <span key={k} className="arabic text-2xl text-fg">
+                  {q.choices[bi]}
+                </span>
+              ))
+            )}
+          </div>
+
+          <div className="mt-4 flex flex-wrap justify-center gap-2" dir="rtl">
+            {q.choices.map((c, i) =>
+              built.includes(i) ? (
+                <span key={i} className="h-12 w-20" />
+              ) : (
+                <button
+                  key={i}
+                  onClick={() => tapSusun(i)}
+                  disabled={answered}
+                  className="arabic text-2xl rounded-2xl border-2 border-line bg-surface px-4 py-2 hover:border-brand transition disabled:opacity-40"
+                >
+                  {c}
+                </button>
+              ),
+            )}
+          </div>
+
+          {!answered && built.length > 0 && (
+            <div className="mt-4 flex justify-center">
+              <Button variant="ghost" size="sm" onClick={() => setBuilt([])}>
+                <RotateCcw size={15} /> Hapus
+              </Button>
+            </div>
+          )}
+        </>
+      ) : (
+        <div className={cn("mt-5 grid gap-3", twoCol ? "sm:grid-cols-2" : "")}>
+          {q.choices.map((c, i) => {
+            const isAnswer = c === q.answer;
+            const isPicked = c === picked;
+            return (
+              <button
+                key={c}
+                onClick={() => choose(c)}
+                disabled={answered}
                 className={cn(
-                  "grid place-items-center w-9 h-9 rounded-full text-sm font-bold shrink-0",
-                  answered && isAnswer
-                    ? "bg-brand text-white"
-                    : answered && isPicked
-                      ? "bg-coral text-white"
-                      : "bg-surface-2 text-fg-muted",
+                  "flex items-center gap-3 rounded-2xl border-2 p-4 transition",
+                  !answered && "bg-surface border-line hover:border-brand hover:bg-brand-light/30 dark:hover:bg-brand/10",
+                  answered && isAnswer && "border-brand bg-brand-light/70 dark:bg-brand/20",
+                  answered && isPicked && !isAnswer && "border-coral bg-coral-soft dark:bg-coral/20",
+                  answered && !isAnswer && !isPicked && "border-line bg-surface opacity-60",
                 )}
               >
-                {answered && isAnswer ? <Check size={16} /> : String.fromCharCode(65 + i)}
-              </span>
-              {bigArabic ? (
-                <span className="arabic text-2xl text-fg">{c}</span>
-              ) : (
-                <span className="font-bold text-fg">{c}</span>
-              )}
-            </button>
-          );
-        })}
-      </div>
+                <span
+                  className={cn(
+                    "grid place-items-center w-9 h-9 rounded-full text-sm font-bold shrink-0",
+                    answered && isAnswer
+                      ? "bg-brand text-white"
+                      : answered && isPicked
+                        ? "bg-coral text-white"
+                        : "bg-surface-2 text-fg-muted",
+                  )}
+                >
+                  {answered && isAnswer ? <Check size={16} /> : String.fromCharCode(65 + i)}
+                </span>
+                {arabicChoices ? (
+                  <span className="arabic text-2xl text-fg">{c}</span>
+                ) : (
+                  <span className="font-bold text-fg">{c}</span>
+                )}
+              </button>
+            );
+          })}
+        </div>
+      )}
 
       {/* Feedback */}
       {answered && (

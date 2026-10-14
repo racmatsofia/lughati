@@ -164,6 +164,80 @@ export const WORDS: Word[] = [
 
 export const wordById = (id: string): Word | undefined => WORDS.find((w) => w.id === id);
 
+/* ---- Emoji pendamping kata (untuk game "ketuk gambar" & mode anak) ---- */
+const THEME_EMOJI: Record<string, string> = {
+  salam: "👋",
+  keluarga: "👨‍👩‍👧",
+  angka: "🔢",
+  makanan: "🍞",
+  rumah: "🏠",
+  warna: "🎨",
+  perjalanan: "✈️",
+  "kata-kerja": "🏃",
+};
+
+export const WORD_EMOJI: Record<string, string> = {
+  salam: "👋", ahlan: "🤝", sabah: "🌅", masa: "🌆", syukran: "🙏", afwan: "😊",
+  ismi: "🪪", kayfa: "❓", bikhair: "👍", maassalam: "👋",
+  usrah: "👨‍👩‍👧", ab: "👨", umm: "👩", akh: "👦", ukht: "👧", ibn: "🧒", bint: "👧",
+  jadd: "👴", jaddah: "👵",
+  wahid: "1️⃣", itsnan: "2️⃣", tsalatsah: "3️⃣", "arba'ah": "4️⃣", khamsah: "5️⃣",
+  yawm: "📅", "sa'ah": "🕐", shabah: "🌅",
+  maa: "💧", khubz: "🍞", aruzz: "🍚", lahm: "🥩", samak: "🐟", "tho'am": "🍽️",
+  syay: "🍵", qahwah: "☕",
+  bait: "🏠", baab: "🚪", maktab: "🪑", kursi: "💺", madrasah: "🏫", kitab: "📖", qalam: "🖊️",
+  ahmar: "🔴", azraq: "🔵", akhdhar: "🟢", ashfar: "🟡", abyadh: "⚪", aswad: "⚫",
+  mathar: "✈️", suq: "🛒", sayyarah: "🚗", qithar: "🚆", funduq: "🏨", thariq: "🛣️",
+  "ya'kul": "🍽️", yasyrab: "🥤", yaqra: "📖", yaktub: "✍️", yadzhab: "🚶", yajlis: "💺",
+};
+
+export const wordEmoji = (w: Pick<Word, "id" | "theme">): string =>
+  WORD_EMOJI[w.id] ?? THEME_EMOJI[w.theme] ?? "🔤";
+
+/** Pecah teks Arab menjadi tile per huruf + harakat (untuk game Susun Huruf). */
+export function arabicTiles(s: string): string[] {
+  const out: string[] = [];
+  for (const ch of s) {
+    const isMark = /[\u064B-\u0652\u0670\u0640]/.test(ch);
+    if (isMark && out.length) out[out.length - 1] += ch;
+    else out.push(ch);
+  }
+  return out;
+}
+
+/** Hapus harakat (untuk soal "Isi Harakat"). */
+export function stripHarakat(s: string): string {
+  return s.replace(/[\u064B-\u0652\u0670]/g, "");
+}
+
+/* --------------------- Sinonim & antonim (Kamus) ------------------------ */
+export type Related = { syn?: [string, string][]; ant?: [string, string][] };
+
+export const RELATED: Record<string, Related> = {
+  kitab: { syn: [["مُصْحَف", "mushaf"], ["دَفْتَر", "buku tulis"]] },
+  bait: { syn: [["مَنْزِل", "manzil (tempat tinggal)"], ["مَسْكَن", "maskan"]] },
+  qalam: { syn: [["مِقْلَم", "miqlam"]] },
+  madrasah: { syn: [["مَدْرَسَة", "madrasah"]], ant: [["بَيْت", "bait (rumah)"]] },
+  maa: { syn: [["مَاء", "maa'"]] },
+  khubz: { syn: [["خُبْز", "khubz"]] },
+  ab: { syn: [["وَالِد", "waalid"]] },
+  umm: { syn: [["وَالِدَة", "waalidah"]] },
+  usrah: { syn: [["عَائِلَة", "'aa'ilah"]] },
+  syukran: { syn: [["شُكْرًا جَزِيلًا", "syukran jaziilan"]] },
+  sahab: { ant: [["مَسَاء", "masaa' (sore)"]] },
+  kabir: { ant: [["صَغِير", "shaghiir (kecil)"]] },
+  ahmar: { ant: [["أَبْيَض", "abyadh"]] },
+  aswad: { ant: [["أَبْيَض", "abyadh"]] },
+  yadzhab: { ant: [["يَرْجِع", "yarji' (kembali)"]] },
+  yajlis: { ant: [["يَقِف", "yaqif (berdiri)"]] },
+  kursi: { syn: [["مَقْعَد", "maq'ad"]] },
+  sayyarah: { syn: [["عَرَبَة", "'arabah"]] },
+  mathar: { syn: [["مَطَار", "mathaar"]] },
+  funduq: { syn: [["نُزُل", "nuzul"]] },
+};
+
+export const relatedFor = (id: string): Related => RELATED[id] ?? {};
+
 export const THEMES: { key: string; label: string; emoji: string }[] = [
   { key: "salam", label: "Salam & Perkenalan", emoji: "👋" },
   { key: "keluarga", label: "Keluarga", emoji: "👨‍👩‍👧" },
@@ -329,6 +403,35 @@ export const STORIES: Story[] = [
       { ar: "أَبِي مُدَرِّسٌ وَأُمِّي طَبِيبَة", translit: "abii mudarris wa ummii thabiibah", meaning: "Ayahku guru dan ibuku dokter" },
       { ar: "لِي أَخٌ وَأُخْت", translit: "lii akhun wa ukht", meaning: "Aku punya satu saudara laki-laki dan satu saudara perempuan" },
       { ar: "أُحِبُّ أُسْرَتِي كَثِيرًا", translit: "uhibbu usratii katsiiran", meaning: "Aku sangat mencintai keluargaku" },
+    ],
+  },
+  {
+    id: "madrasah",
+    title: "فِي الْمَدْرَسَةِ",
+    titleId: "Di Sekolah",
+    level: "A1",
+    emoji: "🏫",
+    minutes: 4,
+    lines: [
+      { ar: "ذَهَبَ عُمَرُ إِلَى الْمَدْرَسَة", translit: "dzahaba 'Umaru ilal madrasah", meaning: "Umar pergi ke sekolah" },
+      { ar: "قَرَأَ كِتَابًا وَكَتَبَ الدَّرْس", translit: "qara'a kitaaban wa katabad dars", meaning: "Dia membaca buku dan menulis pelajaran" },
+      { ar: "سَأَلَ الْمُدَرِّسَ سُؤَالًا", translit: "sa'ala al-mudarrisa su'aalan", meaning: "Dia bertanya kepada guru sebuah pertanyaan" },
+      { ar: "شَكَرَ الْمُدَرِّسُ عُمَرًا", translit: "syakara al-mudarrisu 'Umara", meaning: "Guru berterima kasih kepada Umar" },
+    ],
+  },
+  {
+    id: "safar",
+    title: "رِحْلَةٌ إِلَى السُّوقِ",
+    titleId: "Perjalanan ke Pasar",
+    level: "A2",
+    emoji: "🚗",
+    minutes: 5,
+    lines: [
+      { ar: "رَكِبَتْ سَلْمَى السَّيَّارَةَ", translit: "rakibat Salma as-sayyaarah", meaning: "Salma menaiki mobil" },
+      { ar: "ذَهَبَتْ إِلَى السُّوقِ الْكَبِير", translit: "dzahabat ilas suuqil kabiir", meaning: "Dia pergi ke pasar yang besar" },
+      { ar: "اِشْتَرَتْ سَمَكًا وَأَرُزًّا", translit: "isytarat samakan wa aruzzan", meaning: "Dia membeli ikan dan beras" },
+      { ar: "قَالَتْ لِلْبَائِعِ: شُكْرًا", translit: "qaalat lilbaa'i': syukran", meaning: "Dia berkata kepada penjual: terima kasih" },
+      { ar: "رَجَعَتْ إِلَى الْبَيْتِ مَسَاءً", translit: "raja'at ilal baiti masaa'an", meaning: "Dia kembali ke rumah pada sore hari" },
     ],
   },
 ];

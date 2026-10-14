@@ -1,14 +1,17 @@
-import { useState } from "react";
-import { ArrowLeft, BookOpen, Check, Languages, Play, Sparkles } from "lucide-react";
+import { useEffect, useState } from "react";
+import { ArrowLeft, BookOpen, Check, Languages, Pause, Play, Sparkles } from "lucide-react";
 import { PageHeader } from "../components/layout";
 import { STORIES, type Story } from "../lib/data";
 import { SentenceAudio, SpeakerButton, useSpeaker } from "../components/audio";
-import { Button, Card, Chip, ProgressBar } from "../components/ui";
+import { speak, stopSpeaking } from "../lib/audio";
+import { Button, Card, Chip } from "../components/ui";
 import { useApp } from "../lib/store";
+import { useT } from "../lib/i18n";
 import { cn } from "../lib/utils";
 
 export default function Stories() {
-  const { settings, setSettings, progress, readStory, addXp } = useApp();
+  const { settings, setSettings, progress, readStory } = useApp();
+  const t = useT();
   const [active, setActive] = useState<Story | null>(null);
 
   if (active) {
@@ -28,8 +31,8 @@ export default function Stories() {
   return (
     <div className="animate-fade-up">
       <PageHeader
-        title="Cerita"
-        subtitle="Baca cerita pendek berharakat. Ketuk setiap kalimat untuk mendengar pengucapannya."
+        title={t("cerita.title")}
+        subtitle={t("cerita.sub")}
       />
 
       <div className="mb-5">
@@ -57,7 +60,7 @@ export default function Stories() {
               {progress.storiesRead.includes(s.id) && " · ✓ selesai"}
             </p>
             <Button className="mt-5 self-start" onClick={() => setActive(s)}>
-              <BookOpen size={17} /> Baca sekarang
+              <BookOpen size={17} /> {t("cerita.baca")}
             </Button>
           </Card>
         ))}
@@ -78,10 +81,41 @@ function Reader({
   onFinish: () => void;
   alreadyRead: boolean;
 }) {
-  const { settings, setSettings, addXp } = useApp();
-  const [activeLine, setActiveLine] = useState(0);
+  const { settings, setSettings } = useApp();
+  const t = useT();
+  const [activeLine, setActiveLine] = useState(-1);
   const [showMeaning, setShowMeaning] = useState(true);
   const [quizAnswers, setQuizAnswers] = useState<Record<number, string>>({});
+  const [playingAll, setPlayingAll] = useState(false);
+
+  useEffect(() => () => stopSpeaking(), []);
+
+  function playAll() {
+    if (playingAll) {
+      stopSpeaking();
+      setPlayingAll(false);
+      setActiveLine(-1);
+      return;
+    }
+    setPlayingAll(true);
+    let i = 0;
+    const step = () => {
+      if (i >= story.lines.length) {
+        setPlayingAll(false);
+        setActiveLine(-1);
+        return;
+      }
+      setActiveLine(i);
+      speak(story.lines[i].ar, {
+        rate: settings.rate,
+        onEnd: () => {
+          i += 1;
+          setTimeout(step, 320);
+        },
+      });
+    };
+    step();
+  }
 
   // Kuis: 2 kalimat acak-deterministik
   const quizLines = [story.lines[0], story.lines[Math.min(2, story.lines.length - 1)]];
@@ -113,22 +147,32 @@ function Reader({
 
         <div className="mt-5 flex flex-wrap gap-2">
           <button
+            onClick={playAll}
+            className={cn(
+              "inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-bold transition",
+              playingAll ? "bg-coral text-white" : "bg-brand text-white",
+            )}
+          >
+            {playingAll ? <Pause size={15} /> : <Play size={15} />}
+            {playingAll ? "Hentikan" : t("cerita.putarSemua")}
+          </button>
+          <button
             onClick={() => setSettings({ translit: !settings.translit })}
             className={cn(
               "rounded-full px-4 py-2 text-sm font-bold transition",
-              settings.translit ? "bg-brand text-white" : "bg-surface-2 text-fg-muted",
+              settings.translit ? "bg-brand-light text-brand-dark dark:bg-brand/25 dark:text-white" : "bg-surface-2 text-fg-muted",
             )}
           >
-            Transliterasi
+            {t("cerita.transliterasi")}
           </button>
           <button
             onClick={() => setShowMeaning((m) => !m)}
             className={cn(
               "rounded-full px-4 py-2 text-sm font-bold transition",
-              showMeaning ? "bg-brand text-white" : "bg-surface-2 text-fg-muted",
+              showMeaning ? "bg-brand-light text-brand-dark dark:bg-brand/25 dark:text-white" : "bg-surface-2 text-fg-muted",
             )}
           >
-            Terjemahan
+            {t("cerita.terjemahan")}
           </button>
         </div>
       </Card>
@@ -148,8 +192,8 @@ function Reader({
 
       {/* Quiz */}
       <Card className="mt-6 p-6">
-        <h3 className="font-display font-bold text-lg text-fg mb-1">Kuis pemahaman</h3>
-        <p className="text-sm text-fg-muted mb-4">Pilih arti yang tepat untuk setiap kalimat.</p>
+        <h3 className="font-display font-bold text-lg text-fg mb-1">{t("cerita.kuis")}</h3>
+        <p className="text-sm text-fg-muted mb-4">{t("cerita.kuisDesc")}</p>
 
         <div className="space-y-5">
           {quizLines.map((l, qi) => {
@@ -206,7 +250,7 @@ function Reader({
           Kembali
         </Button>
         <Button className="flex-1" onClick={onFinish}>
-          <Sparkles size={17} /> Tandai selesai
+          <Sparkles size={17} /> {t("cerita.tandaiSelesai")}
         </Button>
       </div>
     </div>

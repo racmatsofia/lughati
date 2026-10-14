@@ -35,8 +35,10 @@ const routes = [
   ["/app/progres", ["Progres Belajar", "Kemampuan", "Kalender belajar"]],
   ["/app/peringkat", ["Peringkat", "Liga"]],
   ["/app/pencapaian", ["Pencapaian", "Langkah Pertama"]],
-  ["/app/profil", ["Profil & Pengaturan", "Mode Offline", "Reset progres"]],
-  ["/kelas", ["Dashboard Guru", "Kelas Bahasa Arab 10-A"]],
+  ["/app/profil", ["Profil & Pengaturan", "Mode Offline", "Reset progres", "Aksesibilitas"]],
+  ["/app/berbicara", ["Latihan Berbicara", "Ketuk mikrofon"]],
+  ["/app/sertifikat", ["Sertifikat", "Kode verifikasi", "Aisyah"]],
+  ["/kelas", ["Dashboard Guru", "Daftar Siswa", "Laporan Mingguan", "Kata paling sering salah"]],
 ];
 
 async function main() {

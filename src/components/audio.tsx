@@ -134,7 +134,7 @@ export function ArabicWord({
             "hover:bg-brand-light/70 dark:hover:bg-brand/20 active:scale-[0.98]",
             playing && "bg-brand-light dark:bg-brand/25 text-brand-dark dark:text-white",
           )}
-          style={{ fontSize }}
+          style={{ fontSize: `calc(${fontSize}px * var(--arabic-scale, 1))` }}
         >
           {text}
         </button>

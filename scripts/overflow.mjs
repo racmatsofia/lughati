@@ -14,7 +14,7 @@ const store = {
   settings: { theme: "light", translit: true, harakat: true, rate: 1, lang: "id", reminders: true, remindAt: "19:30", soundEffects: true },
 };
 
-const routes = ["/", "/app/belajar", "/app/pelajaran/salam/salam-l1", "/app/hijaiyah", "/app/kamus", "/app/flashcard", "/app/progres", "/app/profil"];
+const routes = ["/", "/app/belajar", "/app/pelajaran/salam/salam-l1", "/app/hijaiyah", "/app/kamus", "/app/berbicara", "/app/flashcard", "/app/cerita", "/app/latihan", "/app/sertifikat", "/app/progres", "/app/profil", "/kelas"];
 
 async function main() {
   const list = await (await fetch(`${CDP}/json/list`)).json();

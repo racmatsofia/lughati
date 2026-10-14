@@ -1,36 +1,67 @@
-import { Link } from "react-router-dom";
 import { useState } from "react";
+import { Link } from "react-router-dom";
 import {
   Accessibility,
+  Award,
+  BookOpen,
   Bell,
-  BookMarked,
   Download,
+  Eye,
   Flame,
   Info,
+  KeyRound,
+  Languages,
   LogOut,
+  Palette,
   RotateCcw,
+  Save,
   Settings2,
+  Smartphone,
   Sparkles,
+  Trophy,
+  UserCog,
   Volume2,
   Zap,
 } from "lucide-react";
 import { PageHeader } from "../components/layout";
 import { AvatarPicker } from "../components/Avatar";
-import { Button, Card, Chip, Modal, ProgressBar } from "../components/ui";
+import { Button, Card, Chip, Modal, Segmented } from "../components/ui";
 import { AudioNote } from "../components/audio";
+import { usePWAInstall } from "../lib/pwa";
 import { useApp } from "../lib/store";
+import { useT } from "../lib/i18n";
 import { cn, formatNumber } from "../lib/utils";
 
-const avatars = ["🙂", "👩‍🎓", "🧑‍🎓", "👨‍🏫", "🧕", "👦", "👧", "🧔", "🐪", "🌟"];
+const avatars = ["🙂", "👩‍🎓", "🧑‍🎓", "👨‍🏫", "🧕", "👦", "👧", "🧔", "🐪", "🌟", "🦁", "🐯"];
+const leagues = ["Bronze", "Silver", "Gold", "Platinum", "Diamond"];
 
 export default function Profile() {
-  const { user, progress, level, settings, setSettings, logout, resetProgress } = useApp();
+  const t = useT();
+  const {
+    user,
+    progress,
+    level,
+    settings,
+    setSettings,
+    logout,
+    resetProgress,
+    setName,
+    unlockedBadges,
+  } = useApp();
+  const { canInstall, installed, promptInstall } = usePWAInstall();
   const [confirmReset, setConfirmReset] = useState(false);
-  const [installable, setInstallable] = useState(!!(window as any).__lughatiInstall);
+  const [editOpen, setEditOpen] = useState(false);
+  const [passOpen, setPassOpen] = useState(false);
+  const [draftName, setDraftName] = useState(user?.name ?? "");
+  const [oldPass, setOldPass] = useState("");
+  const [newPass, setNewPass] = useState("");
+  const [passMsg, setPassMsg] = useState("");
+
+  const league = leagues[Math.min(leagues.length - 1, Math.floor(level / 4))];
 
   return (
     <div className="animate-fade-up">
-      <PageHeader title="Profil & Pengaturan" subtitle="Sesuaikan pengalaman belajarmu." />
+      <PageHeader title={t("profil.title")} subtitle={t("profil.sub")} />
 
       {/* Kartu profil */}
       <Card className="p-6">
@@ -49,14 +80,20 @@ export default function Profile() {
                 <Zap size={14} /> {formatNumber(progress.xp)} XP
               </Chip>
               <Chip tone="coral">
-                <Flame size={14} /> {progress.streak} hari
+                <Flame size={14} /> {progress.streak}
+              </Chip>
+              <Chip tone="neutral">
+                <Trophy size={14} /> Liga {league}
               </Chip>
             </div>
           </div>
+          <Button variant="outline" onClick={() => setEditOpen(true)}>
+            <UserCog size={17} /> {t("profil.editProfil")}
+          </Button>
         </div>
 
         <div className="mt-6">
-          <p className="text-sm font-bold text-fg mb-3">Pilih avatar</p>
+          <p className="text-sm font-bold text-fg mb-3">{t("profil.pilihAvatar")}</p>
           <div className="flex flex-wrap gap-2">
             {avatars.map((a) => (
               <AvatarPicker key={a} emoji={a} />
@@ -65,72 +102,101 @@ export default function Profile() {
         </div>
 
         <div className="mt-6 grid grid-cols-3 gap-3">
-          <MiniStat label="Pelajaran" value={`${progress.completedLessons.length}`} />
-          <MiniStat label="Kata" value={`${progress.learnedWords.length}`} />
-          <MiniStat label="Akurasi" value={`${progress.accuracy}%`} />
+          <MiniStat icon={<Flame size={16} />} label={t("profil.hariStreak")} value={`${progress.streak}`} />
+          <MiniStat icon={<BookOpen size={16} />} label={t("progres.kata")} value={`${progress.learnedWords.length}`} />
+          <MiniStat icon={<Award size={16} />} label={t("profil.badge")} value={`${unlockedBadges.length}`} />
         </div>
       </Card>
 
-      {/* Pengaturan tampilan */}
+      {/* Akun */}
       <Card className="p-6 mt-5">
-        <SectionHeader icon={<Settings2 size={18} />} title="Tampilan" />
-        <div className="space-y-1">
-          <Row label="Tema" hint="Terang, gelap, atau ikuti sistem">
-            <Segmented
-              value={settings.theme}
-              onChange={(v) => setSettings({ theme: v as any })}
-              options={[
-                ["light", "Terang"],
-                ["dark", "Gelap"],
-                ["system", "Sistem"],
-              ]}
-            />
-          </Row>
-          <Toggle
-            label="Tampilkan transliterasi"
-            hint="Tulisan latin di bawah teks Arab"
-            checked={settings.translit}
-            onChange={(v) => setSettings({ translit: v })}
-          />
-          <Toggle
-            label="Tampilkan harakat penuh"
-            hint="Bantu pemula membaca dengan tepat"
-            checked={settings.harakat}
-            onChange={(v) => setSettings({ harakat: v })}
-          />
-        </div>
+        <SectionHeader icon={<UserCog size={18} />} title={t("profil.akun")} />
+        <RowButton
+          icon={<UserCog size={17} />}
+          label={t("profil.editProfil")}
+          onClick={() => setEditOpen(true)}
+        />
+        <RowButton
+          icon={<KeyRound size={17} />}
+          label={t("profil.gantiSandi")}
+          onClick={() => setPassOpen(true)}
+        />
+        <RowButton
+          icon={<Award size={17} />}
+          label={t("profil.sertifikat")}
+          to="/app/sertifikat"
+        />
       </Card>
 
-      {/* Audio */}
+      {/* Preferensi */}
       <Card className="p-6 mt-5">
-        <SectionHeader icon={<Volume2 size={18} />} title="Audio" />
-        <Row label="Kecepatan audio default" hint="Gunakan 0.75× saat masih pemula">
+        <SectionHeader icon={<Settings2 size={18} />} title={t("profil.preferensi")} />
+
+        <Row icon={<Languages size={17} />} label={t("profil.bahasa")}>
+          <Segmented
+            value={settings.lang}
+            onChange={(v) => setSettings({ lang: v as "id" | "en" })}
+            options={[
+              ["id", t("set.indonesia")],
+              ["en", t("set.inggris")],
+            ]}
+          />
+        </Row>
+
+        <Row icon={<Palette size={17} />} label={t("profil.tampilan")}>
+          <Segmented
+            value={settings.theme}
+            onChange={(v) => setSettings({ theme: v as any })}
+            options={[
+              ["light", t("set.terang")],
+              ["dark", t("set.gelap")],
+              ["system", t("set.sistem")],
+            ]}
+          />
+        </Row>
+
+        <Row icon={<Eye size={17} />} label={t("profil.teksArab")}>
+          <Segmented
+            value={settings.arabicSize}
+            onChange={(v) => setSettings({ arabicSize: v as any })}
+            options={[
+              ["kecil", t("set.kecil")],
+              ["sedang", t("set.sedang")],
+              ["besar", t("set.besar")],
+            ]}
+          />
+        </Row>
+
+        <Row icon={<Volume2 size={17} />} label="Audio">
           <Segmented
             value={String(settings.rate)}
             onChange={(v) => setSettings({ rate: Number(v) })}
             options={[
-              ["0.75", "Lambat"],
-              ["1", "Normal"],
-              ["1.25", "Cepat"],
+              ["0.75", t("set.lambat")],
+              ["1", t("set.normal")],
+              ["1.25", t("set.cepat")],
             ]}
           />
         </Row>
-        <div className="mt-4">
-          <AudioNote />
-        </div>
-      </Card>
 
-      {/* Notifikasi & aksesibilitas */}
-      <Card className="p-6 mt-5">
-        <SectionHeader icon={<Bell size={18} />} title="Notifikasi & Aksesibilitas" />
-        <div className="space-y-1">
-          <Toggle
-            label="Pengingat belajar harian"
-            hint={`Setiap hari pukul ${settings.remindAt}`}
-            checked={settings.reminders}
-            onChange={(v) => setSettings({ reminders: v })}
-          />
-          <Row label="Jam pengingat">
+        <Toggle
+          icon={<Languages size={17} />}
+          label={t("cerita.transliterasi")}
+          hint="Tulisan latin di bawah teks Arab"
+          checked={settings.translit}
+          onChange={(v) => setSettings({ translit: v })}
+        />
+
+        <Toggle
+          icon={<Bell size={17} />}
+          label={t("profil.pengingat")}
+          hint={`${t("profil.pengingat")} · ${settings.remindAt}`}
+          checked={settings.reminders}
+          onChange={(v) => setSettings({ reminders: v })}
+        />
+
+        {settings.reminders && (
+          <Row icon={<Bell size={17} />} label={`${t("profil.pengingat")} — jam`}>
             <input
               type="time"
               value={settings.remindAt}
@@ -138,67 +204,154 @@ export default function Profile() {
               className="rounded-xl border border-line bg-bg px-3 py-2 font-bold text-fg"
             />
           </Row>
-          <Toggle
-            label="Efek suara"
-            hint="Bunyi saat menjawab benar atau naik level"
-            checked={settings.soundEffects}
-            onChange={(v) => setSettings({ soundEffects: v })}
-          />
-        </div>
-        <div className="mt-4 flex items-center gap-2 text-xs text-fg-subtle">
-          <Accessibility size={14} /> Lughati mengikuti pengaturan "kurangi gerak" pada perangkatmu.
+        )}
+      </Card>
+
+      {/* Aksesibilitas */}
+      <Card className="p-6 mt-5">
+        <SectionHeader icon={<Accessibility size={18} />} title={t("profil.aksesibilitas")} />
+        <Toggle
+          label={t("profil.modeDisleksia")}
+          hint="Font lebih mudah dibaca & spasi lebih lega"
+          checked={settings.dyslexic}
+          onChange={(v) => setSettings({ dyslexic: v })}
+        />
+        <Toggle
+          label={t("profil.kontrasTinggi")}
+          hint="Teks & garis lebih tegas"
+          checked={settings.highContrast}
+          onChange={(v) => setSettings({ highContrast: v })}
+        />
+        <Toggle
+          label={t("profil.kurangiGerak")}
+          hint="Matikan animasi & transisi"
+          checked={settings.reduceMotion}
+          onChange={(v) => setSettings({ reduceMotion: v })}
+        />
+        <Toggle
+          label={t("profil.modeAnak")}
+          hint="Tampilan lebih besar & ramah anak"
+          checked={settings.kidsMode}
+          onChange={(v) => setSettings({ kidsMode: v })}
+        />
+        <div className="mt-4">
+          <AudioNote />
         </div>
       </Card>
 
       {/* Offline */}
       <Card className="p-6 mt-5">
-        <SectionHeader icon={<Download size={18} />} title="Mode Offline" />
-        <p className="text-sm text-fg-muted mb-4">
-          Pasang Lughati sebagai aplikasi & unduh paket pelajaran untuk belajar tanpa internet.
-        </p>
-        <Button variant="outline" disabled>
-          <Download size={17} /> {installable ? "Pasang aplikasi" : "Unduh paket offline"}
-        </Button>
-        <p className="text-xs text-fg-subtle mt-2">
-          Tersedia di Chrome/Edge desktop & Android. Premium membuka semua paket.
-        </p>
+        <SectionHeader icon={<Smartphone size={18} />} title={t("profil.modeOffline")} />
+        <p className="text-sm text-fg-muted mb-4">{t("profil.modeOfflineDesc")}</p>
+        {installed ? (
+          <Chip tone="success">✓ {t("profil.terpasang")}</Chip>
+        ) : (
+          <Button variant="outline" onClick={() => promptInstall()} disabled={!canInstall}>
+            <Download size={17} /> {t("profil.pasangApp")}
+          </Button>
+        )}
+        {!canInstall && !installed && (
+          <p className="text-xs text-fg-subtle mt-2">
+            Buka lewat Chrome/Edge desktop atau Android untuk memasang sebagai aplikasi. iOS: Bagikan → Tambahkan ke Layar Utama.
+          </p>
+        )}
       </Card>
 
       {/* Lainnya */}
       <Card className="p-6 mt-5">
-        <SectionHeader icon={<Info size={18} />} title="Lainnya" />
+        <SectionHeader icon={<Info size={18} />} title={t("profil.legal")} />
         <div className="flex flex-wrap gap-2">
-          <Link to="/tentang" className="rounded-full bg-surface-2 px-4 py-2 text-sm font-bold text-fg-muted hover:text-brand">
-            Tentang Lughati
-          </Link>
-          <Link to="/bantuan" className="rounded-full bg-surface-2 px-4 py-2 text-sm font-bold text-fg-muted hover:text-brand">
-            Pusat Bantuan
-          </Link>
-          <Link to="/harga" className="rounded-full bg-surface-2 px-4 py-2 text-sm font-bold text-fg-muted hover:text-brand">
-            Upgrade Premium
-          </Link>
-          <Link to="/kelas" className="rounded-full bg-surface-2 px-4 py-2 text-sm font-bold text-fg-muted hover:text-brand">
-            Dashboard Guru
-          </Link>
+          <Pill to="/tentang">{t("profil.tentang")}</Pill>
+          <Pill to="/bantuan">{t("profil.bantuan")}</Pill>
+          <Pill to="/harga">{t("profil.premium")}</Pill>
+          <Pill to="/kelas">{t("profil.kelasGuru")}</Pill>
         </div>
       </Card>
 
       <div className="mt-5 flex flex-wrap gap-3">
         <Button variant="outline" onClick={() => setConfirmReset(true)}>
-          <RotateCcw size={17} /> Reset progres
+          <RotateCcw size={17} /> {t("profil.resetProgres")}
         </Button>
         <Button variant="danger" onClick={logout}>
-          <LogOut size={17} /> Keluar
+          <LogOut size={17} /> {t("profil.keluar")}
         </Button>
       </div>
 
-      <Modal open={confirmReset} onClose={() => setConfirmReset(false)} title="Reset progres?">
+      {/* Modal edit profil */}
+      <Modal open={editOpen} onClose={() => setEditOpen(false)} title={t("profil.editProfil")}>
+        <label className="block mb-4">
+          <span className="block text-sm font-bold text-fg mb-1.5">{t("profil.pilihNama")}</span>
+          <input
+            value={draftName}
+            onChange={(e) => setDraftName(e.target.value)}
+            className="w-full rounded-2xl border border-line bg-surface px-4 py-3 text-fg outline-none focus:border-brand focus:ring-4 focus:ring-brand/15"
+          />
+        </label>
+        <div className="flex gap-3">
+          <Button variant="outline" className="flex-1" onClick={() => setEditOpen(false)}>
+            {t("c.batal")}
+          </Button>
+          <Button
+            className="flex-1"
+            onClick={() => {
+              if (draftName.trim().length >= 2) setName(draftName.trim());
+              setEditOpen(false);
+            }}
+          >
+            <Save size={16} /> {t("c.simpan")}
+          </Button>
+        </div>
+      </Modal>
+
+      {/* Modal ganti sandi */}
+      <Modal open={passOpen} onClose={() => setPassOpen(false)} title={t("profil.gantiSandi")}>
+        <label className="block mb-3">
+          <span className="block text-sm font-bold text-fg mb-1.5">{t("profil.sandiLama")}</span>
+          <input
+            type="password"
+            value={oldPass}
+            onChange={(e) => setOldPass(e.target.value)}
+            className="w-full rounded-2xl border border-line bg-surface px-4 py-3 text-fg outline-none focus:border-brand focus:ring-4 focus:ring-brand/15"
+          />
+        </label>
+        <label className="block mb-3">
+          <span className="block text-sm font-bold text-fg mb-1.5">{t("profil.sandiBaru")}</span>
+          <input
+            type="password"
+            value={newPass}
+            onChange={(e) => setNewPass(e.target.value)}
+            className="w-full rounded-2xl border border-line bg-surface px-4 py-3 text-fg outline-none focus:border-brand focus:ring-4 focus:ring-brand/15"
+          />
+        </label>
+        {passMsg && <p className="text-sm font-semibold text-coral mb-2">{passMsg}</p>}
+        <div className="flex gap-3">
+          <Button variant="outline" className="flex-1" onClick={() => setPassOpen(false)}>
+            {t("c.batal")}
+          </Button>
+          <Button
+            className="flex-1"
+            onClick={() => {
+              if (oldPass.length < 4) return setPassMsg("Kata sandi lama belum benar.");
+              if (newPass.length < 6) return setPassMsg("Kata sandi baru minimal 6 karakter.");
+              setPassMsg("");
+              setOldPass("");
+              setNewPass("");
+              setPassOpen(false);
+            }}
+          >
+            <Save size={16} /> {t("c.simpan")}
+          </Button>
+        </div>
+      </Modal>
+
+      {/* Modal reset */}
+      <Modal open={confirmReset} onClose={() => setConfirmReset(false)} title={t("profil.resetProgres")}>
         <p className="text-fg-muted">
           Semua XP, streak, dan kata yang dikuasai akan dihapus. Tindakan ini tidak bisa dibatalkan.
         </p>
         <div className="mt-5 flex gap-3">
           <Button variant="outline" className="flex-1" onClick={() => setConfirmReset(false)}>
-            Batal
+            {t("c.batal")}
           </Button>
           <Button
             variant="danger"
@@ -208,7 +361,7 @@ export default function Profile() {
               setConfirmReset(false);
             }}
           >
-            Ya, reset
+            {t("c.ya")}
           </Button>
         </div>
       </Modal>
@@ -216,6 +369,7 @@ export default function Profile() {
   );
 }
 
+/* ------------------------------ sub bagian ------------------------------ */
 function SectionHeader({ icon, title }: { icon: React.ReactNode; title: string }) {
   return (
     <div className="flex items-center gap-2 mb-4">
@@ -228,31 +382,62 @@ function SectionHeader({ icon, title }: { icon: React.ReactNode; title: string }
 }
 
 function Row({
+  icon,
   label,
-  hint,
   children,
 }: {
+  icon?: React.ReactNode;
   label: string;
-  hint?: string;
   children: React.ReactNode;
 }) {
   return (
     <div className="flex flex-wrap items-center justify-between gap-3 py-3 border-b border-line last:border-0">
-      <div>
-        <p className="font-bold text-fg text-sm">{label}</p>
-        {hint && <p className="text-xs text-fg-muted">{hint}</p>}
-      </div>
+      <span className="flex items-center gap-2.5 font-bold text-fg text-sm">
+        {icon && <span className="text-fg-subtle">{icon}</span>}
+        {label}
+      </span>
       {children}
     </div>
   );
 }
 
+function RowButton({
+  icon,
+  label,
+  onClick,
+  to,
+}: {
+  icon: React.ReactNode;
+  label: string;
+  onClick?: () => void;
+  to?: string;
+}) {
+  const inner = (
+    <span className="flex items-center gap-3 w-full py-3 text-left border-b border-line last:border-0">
+      <span className="text-fg-subtle">{icon}</span>
+      <span className="flex-1 font-bold text-fg text-sm">{label}</span>
+      <span className="text-fg-subtle">›</span>
+    </span>
+  );
+  return to ? (
+    <Link to={to} className="block hover:text-brand">
+      {inner}
+    </Link>
+  ) : (
+    <button onClick={onClick} className="w-full">
+      {inner}
+    </button>
+  );
+}
+
 function Toggle({
+  icon,
   label,
   hint,
   checked,
   onChange,
 }: {
+  icon?: React.ReactNode;
   label: string;
   hint?: string;
   checked: boolean;
@@ -260,18 +445,18 @@ function Toggle({
 }) {
   return (
     <div className="flex items-center justify-between gap-3 py-3 border-b border-line last:border-0">
-      <div>
-        <p className="font-bold text-fg text-sm">{label}</p>
-        {hint && <p className="text-xs text-fg-muted">{hint}</p>}
+      <div className="flex items-start gap-2.5">
+        {icon && <span className="text-fg-subtle mt-0.5">{icon}</span>}
+        <div>
+          <p className="font-bold text-fg text-sm">{label}</p>
+          {hint && <p className="text-xs text-fg-muted">{hint}</p>}
+        </div>
       </div>
       <button
         role="switch"
         aria-checked={checked}
         onClick={() => onChange(!checked)}
-        className={cn(
-          "relative w-12 h-7 rounded-full transition shrink-0",
-          checked ? "bg-brand" : "bg-surface-2",
-        )}
+        className={cn("relative w-12 h-7 rounded-full transition shrink-0", checked ? "bg-brand" : "bg-surface-2")}
       >
         <span
           className={cn(
@@ -284,37 +469,22 @@ function Toggle({
   );
 }
 
-function Segmented({
-  value,
-  onChange,
-  options,
-}: {
-  value: string;
-  onChange: (v: string) => void;
-  options: [string, string][];
-}) {
+function Pill({ to, children }: { to: string; children: React.ReactNode }) {
   return (
-    <div className="inline-flex rounded-full bg-surface-2 p-1">
-      {options.map(([v, label]) => (
-        <button
-          key={v}
-          onClick={() => onChange(v)}
-          className={cn(
-            "rounded-full px-3.5 py-1.5 text-sm font-bold transition",
-            value === v ? "bg-brand text-white" : "text-fg-muted",
-          )}
-        >
-          {label}
-        </button>
-      ))}
-    </div>
+    <Link
+      to={to}
+      className="rounded-full bg-surface-2 px-4 py-2 text-sm font-bold text-fg-muted hover:text-brand transition"
+    >
+      {children}
+    </Link>
   );
 }
 
-function MiniStat({ label, value }: { label: string; value: string }) {
+function MiniStat({ icon, label, value }: { icon: React.ReactNode; label: string; value: string }) {
   return (
     <div className="rounded-2xl bg-bg-alt dark:bg-surface-2 p-3 text-center">
-      <p className="font-display font-bold text-xl text-fg">{value}</p>
+      <span className="text-brand flex justify-center">{icon}</span>
+      <p className="font-display font-bold text-xl text-fg mt-1">{value}</p>
       <p className="text-xs text-fg-muted">{label}</p>
     </div>
   );

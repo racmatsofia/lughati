@@ -215,6 +215,37 @@ export function EmptyState({
   );
 }
 
+/* ------------------------------ Segmented ------------------------------- */
+export function Segmented({
+  value,
+  onChange,
+  options,
+  className,
+}: {
+  value: string;
+  onChange: (v: string) => void;
+  options: [string, string][];
+  className?: string;
+}) {
+  return (
+    <div className={cn("inline-flex rounded-full bg-surface-2 p-1", className)}>
+      {options.map(([v, label]) => (
+        <button
+          key={v}
+          type="button"
+          onClick={() => onChange(v)}
+          className={cn(
+            "rounded-full px-3.5 py-1.5 text-sm font-bold transition",
+            value === v ? "bg-brand text-white" : "text-fg-muted hover:text-fg",
+          )}
+        >
+          {label}
+        </button>
+      ))}
+    </div>
+  );
+}
+
 /* -------------------------------- Modal --------------------------------- */
 export function Modal({
   open,

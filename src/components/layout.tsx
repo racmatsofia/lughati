@@ -7,9 +7,10 @@ import {
   BookText,
   Gamepad2,
   Home,
-  Layers,
   Languages,
+  Layers,
   Menu,
+  Mic,
   Settings,
   Trophy,
   User,
@@ -17,12 +18,14 @@ import {
   Zap,
 } from "lucide-react";
 import { Logo, Mascot, ThemeToggle } from "./brand";
+import { InstallPrompt, OfflineBanner } from "./PWA";
 import { buttonClasses } from "./ui";
 import { cn, formatNumber } from "../lib/utils";
 import { useApp } from "../lib/store";
+import { useT, type TKey } from "../lib/i18n";
 
 /* ============================ Public Layout ============================= */
-const publicLinks = [
+const publicLinks: { to: string; label: string }[] = [
   { to: "/#fitur", label: "Fitur" },
   { to: "/app/belajar", label: "Kursus" },
   { to: "/harga", label: "Harga" },
@@ -33,6 +36,7 @@ export function PublicLayout() {
   const [open, setOpen] = useState(false);
   const { pathname } = useLocation();
   const { user } = useApp();
+  const t = useT();
 
   useEffect(() => {
     setOpen(false);
@@ -59,10 +63,10 @@ export function PublicLayout() {
             <div className="hidden sm:flex items-center gap-2">
               <ThemeToggle />
               <Link to="/masuk" className={buttonClasses("ghost", "md")}>
-                Masuk
+                {t("auth.masuk")}
               </Link>
               <Link to={user ? "/app/belajar" : "/daftar"} className={buttonClasses("primary", "md")}>
-                {user ? "Buka Aplikasi" : "Coba Gratis"}
+                {user ? t("nav.belajar") : t("auth.cobaGratis")}
               </Link>
             </div>
             <button
@@ -82,13 +86,13 @@ export function PublicLayout() {
               </Link>
             ))}
             <Link to="/masuk" className="py-3 font-semibold text-brand border-b border-line/60">
-              Masuk
+              {t("auth.masuk")}
             </Link>
             <Link
               to={user ? "/app/belajar" : "/daftar"}
               className="mt-2 inline-flex justify-center rounded-full bg-brand px-5 py-3 font-bold text-white"
             >
-              {user ? "Buka Aplikasi" : "Coba Gratis"}
+              {user ? t("nav.belajar") : t("auth.cobaGratis")}
             </Link>
           </div>
         )}
@@ -99,15 +103,17 @@ export function PublicLayout() {
       </main>
 
       <Footer />
+      <OfflineBanner />
     </div>
   );
 }
 
 function Footer() {
+  const t = useT();
   const cols = [
     { title: "Produk", links: [["Fitur", "/#fitur"], ["Kursus", "/app/belajar"], ["Harga", "/harga"], ["Kamus", "/app/kamus"]] },
-    { title: "Belajar", links: [["Hijaiyah", "/app/hijaiyah"], ["Flashcard", "/app/flashcard"], ["Cerita", "/app/cerita"], ["Peringkat", "/app/peringkat"]] },
-    { title: "Perusahaan", links: [["Tentang", "/tentang"], ["Bantuan", "/bantuan"], ["Kelas Guru", "/kelas"]] },
+    { title: t("nav.belajar"), links: [[t("nav.hijaiyah"), "/app/hijaiyah"], [t("nav.berbicara"), "/app/berbicara"], [t("nav.cerita"), "/app/cerita"], [t("nav.peringkat"), "/app/peringkat"]] },
+    { title: "Perusahaan", links: [["Tentang", "/tentang"], ["Bantuan", "/bantuan"], ["Kelas Guru", "/kelas"], ["Sertifikat", "/app/sertifikat"]] },
   ] as const;
   return (
     <footer className="border-t border-line bg-bg-alt mt-16">
@@ -115,10 +121,7 @@ function Footer() {
         <div className="grid gap-10 md:grid-cols-[1.4fr_1fr_1fr_1fr]">
           <div>
             <Logo />
-            <p className="text-sm text-fg-muted mt-4 max-w-xs leading-relaxed">
-              Lughati (لُغَتِي) berarti "bahasa-ku". Belajar bahasa Arab dari nol — cukup klik,
-              langsung dengar, jadi lancar.
-            </p>
+            <p className="text-sm text-fg-muted mt-4 max-w-xs leading-relaxed">{t("brand.footer")}</p>
             <Mascot message="Ahlan! Aku Jamal 🐪" className="mt-5" size="sm" />
           </div>
           {cols.map((c) => (
@@ -146,25 +149,34 @@ function Footer() {
 }
 
 /* ============================== App Layout ============================== */
-const primaryNav = [
-  { to: "/app/belajar", label: "Belajar", icon: Home },
-  { to: "/app/kamus", label: "Kamus", icon: BookOpen },
-  { to: "/app/latihan", label: "Latihan", icon: Gamepad2 },
-  { to: "/app/progres", label: "Progres", icon: BarChart3 },
-  { to: "/app/profil", label: "Profil", icon: User },
+const bottomNav: { to: string; key: TKey; icon: any }[] = [
+  { to: "/app/belajar", key: "nav.belajar", icon: Home },
+  { to: "/app/kamus", key: "nav.kamus", icon: BookOpen },
+  { to: "/app/latihan", key: "nav.latihan", icon: Gamepad2 },
+  { to: "/app/progres", key: "nav.progres", icon: BarChart3 },
+  { to: "/app/profil", key: "nav.profil", icon: User },
 ];
 
-const secondaryNav = [
-  { to: "/app/hijaiyah", label: "Hijaiyah", icon: Languages },
-  { to: "/app/flashcard", label: "Flashcard", icon: Layers },
-  { to: "/app/cerita", label: "Cerita", icon: BookText },
-  { to: "/app/peringkat", label: "Peringkat", icon: Trophy },
-  { to: "/app/pencapaian", label: "Pencapaian", icon: Award },
+const sidebarMain: { to: string; key: TKey; icon: any }[] = [
+  { to: "/app/belajar", key: "nav.belajar", icon: Home },
+  { to: "/app/hijaiyah", key: "nav.hijaiyah", icon: Languages },
+  { to: "/app/kamus", key: "nav.kamus", icon: BookOpen },
+  { to: "/app/latihan", key: "nav.latihan", icon: Gamepad2 },
+  { to: "/app/berbicara", key: "nav.berbicara", icon: Mic },
+  { to: "/app/cerita", key: "nav.cerita", icon: BookText },
+];
+
+const sidebarMore: { to: string; key: TKey; icon: any }[] = [
+  { to: "/app/progres", key: "nav.progres", icon: BarChart3 },
+  { to: "/app/flashcard", key: "nav.flashcard", icon: Layers },
+  { to: "/app/peringkat", key: "nav.peringkat", icon: Trophy },
+  { to: "/app/pencapaian", key: "nav.pencapaian", icon: Award },
 ];
 
 export function AppLayout() {
-  const { user, progress, level, settings } = useApp();
+  const { user, progress, level } = useApp();
   const { pathname } = useLocation();
+  const t = useT();
 
   useEffect(() => {
     window.scrollTo(0, 0);
@@ -181,15 +193,12 @@ export function AppLayout() {
         </div>
 
         <nav className="mt-8 flex-1 overflow-y-auto no-scrollbar">
-          <SideLink to="/app/belajar" label="Belajar" icon={Home} end />
-          {secondaryNav.slice(0, 1).map((n) => (
-            <SideLink key={n.to} {...n} />
+          {sidebarMain.map((n) => (
+            <SideLink key={n.to} to={n.to} label={t(n.key)} icon={n.icon} end={n.to === "/app/belajar"} />
           ))}
-          {primaryNav.slice(1, 4).map((n) => (
-            <SideLink key={n.to} {...n} />
-          ))}
-          {secondaryNav.slice(1).map((n) => (
-            <SideLink key={n.to} {...n} />
+          <div className="my-3 border-t border-line" />
+          {sidebarMore.map((n) => (
+            <SideLink key={n.to} to={n.to} label={t(n.key)} icon={n.icon} />
           ))}
         </nav>
 
@@ -228,7 +237,10 @@ export function AppLayout() {
 
       {/* ===== Content ===== */}
       <div className="lg:pl-[268px]">
-        <div className="mx-auto max-w-[1080px] px-4 sm:px-6 lg:px-10 py-6 lg:py-10 pb-28 lg:pb-16">
+        <div
+          id="app-content"
+          className="mx-auto max-w-[1080px] px-4 sm:px-6 lg:px-10 py-6 lg:py-10 pb-28 lg:pb-16"
+        >
           <Outlet />
         </div>
       </div>
@@ -236,7 +248,7 @@ export function AppLayout() {
       {/* ===== Mobile bottom nav ===== */}
       <nav className="lg:hidden fixed bottom-0 inset-x-0 z-40 border-t border-line bg-surface/95 backdrop-blur safe-bottom">
         <ul className="grid grid-cols-5">
-          {primaryNav.map((n) => (
+          {bottomNav.map((n) => (
             <li key={n.to}>
               <NavLink
                 to={n.to}
@@ -257,7 +269,7 @@ export function AppLayout() {
                     >
                       <n.icon size={19} strokeWidth={isActive ? 2.5 : 2} />
                     </span>
-                    {n.label}
+                    {t(n.key)}
                   </>
                 )}
               </NavLink>
@@ -266,8 +278,7 @@ export function AppLayout() {
         </ul>
       </nav>
 
-      {/* hint settings for language */}
-      {settings.lang === "en" && null}
+      <OfflineBanner />
     </div>
   );
 }
@@ -324,3 +335,5 @@ export function PageHeader({
     </div>
   );
 }
+
+export { InstallPrompt };

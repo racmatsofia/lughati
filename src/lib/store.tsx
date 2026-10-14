@@ -23,6 +23,11 @@ export type Settings = {
   reminders: boolean;
   remindAt: string;
   soundEffects: boolean;
+  arabicSize: "kecil" | "sedang" | "besar";
+  dyslexic: boolean;
+  highContrast: boolean;
+  reduceMotion: boolean;
+  kidsMode: boolean;
 };
 
 export type HistoryEntry = { date: string; xp: number };
@@ -41,6 +46,8 @@ export type Progress = {
   history: HistoryEntry[];
   accuracy: number;
   quizzes: number;
+  searchHistory: string[];
+  dailyDone: string | null;
 };
 
 export type User = {
@@ -77,6 +84,8 @@ type Ctx = {
   addFlashcard: (wordId: string) => void;
   readStory: (id: string) => void;
   update: (patch: Partial<Progress>) => void;
+  addSearch: (q: string) => void;
+  setName: (name: string) => void;
   setSettings: (patch: Partial<Settings>) => void;
   toggleTheme: () => void;
   resetProgress: () => void;
@@ -95,6 +104,11 @@ const defaultSettings: Settings = {
   reminders: true,
   remindAt: "19:30",
   soundEffects: true,
+  arabicSize: "sedang",
+  dyslexic: false,
+  highContrast: false,
+  reduceMotion: false,
+  kidsMode: false,
 };
 
 const defaultProgress: Progress = {
@@ -111,6 +125,8 @@ const defaultProgress: Progress = {
   history: [],
   accuracy: 0,
   quizzes: 0,
+  searchHistory: [],
+  dailyDone: null,
 };
 
 function load(): Persisted {
@@ -163,6 +179,17 @@ export function AppProvider({ children }: { children: ReactNode }) {
     mq?.addEventListener?.("change", apply);
     return () => mq?.removeEventListener?.("change", apply);
   }, [settings.theme]);
+
+  /* apply accessibility & text preferences */
+  useEffect(() => {
+    const root = document.documentElement;
+    root.classList.toggle("dyslexic", settings.dyslexic);
+    root.classList.toggle("contrast", settings.highContrast);
+    root.classList.toggle("kids", settings.kidsMode);
+    root.classList.toggle("reduce-motion", settings.reduceMotion);
+    const scale = settings.arabicSize === "besar" ? 1.18 : settings.arabicSize === "kecil" ? 0.88 : 1;
+    root.style.setProperty("--arabic-scale", String(scale));
+  }, [settings.dyslexic, settings.highContrast, settings.kidsMode, settings.reduceMotion, settings.arabicSize]);
 
   const update = useCallback((patch: Partial<Progress>) => {
     setProgress((p) => ({ ...p, ...patch }));
@@ -285,6 +312,19 @@ export function AppProvider({ children }: { children: ReactNode }) {
     setProgress(defaultProgress);
   }, []);
 
+  const addSearch = useCallback((q: string) => {
+    const term = q.trim();
+    if (term.length < 2) return;
+    setProgress((p) => ({
+      ...p,
+      searchHistory: [term, ...p.searchHistory.filter((x) => x !== term)].slice(0, 8),
+    }));
+  }, []);
+
+  const setName = useCallback((name: string) => {
+    setUser((u) => (u ? { ...u, name } : u));
+  }, []);
+
   const login = useCallback((email: string, name?: string) => {
     setUser((u) => ({
       name: name || u?.name || email.split("@")[0] || "Sahabat Lughati",
@@ -369,6 +409,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
     addFlashcard,
     readStory,
     update,
+    addSearch,
+    setName,
     setSettings,
     toggleTheme,
     resetProgress,

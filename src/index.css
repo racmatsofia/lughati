@@ -14,6 +14,7 @@
   --fg-muted: #5c6b68;
   --fg-subtle: #93a19e;
   --shadow-color: 30 42 40;
+  --arabic-scale: 1;
 }
 .dark {
   --bg: #0f1b1a;
@@ -195,6 +196,73 @@
 .safe-bottom {
   padding-bottom: env(safe-area-inset-bottom);
 }
+
+/* ---------- Preferensi aksesibilitas & teks ---------- */
+.dyslexic {
+  --font-body: "Lexend", "Nunito", system-ui, sans-serif;
+  --font-display: "Lexend", "Baloo 2", system-ui, sans-serif;
+  letter-spacing: 0.015em;
+  word-spacing: 0.09em;
+}
+.dyslexic .arabic {
+  line-height: 2.05;
+}
+.contrast {
+  --fg: #0a1413;
+  --fg-muted: #2c3937;
+  --fg-subtle: #4a5b58;
+  --line: #b3a184;
+  --surface-2: #ece1d1;
+  --bg-alt: #f2e8d9;
+}
+.contrast.dark {
+  --fg: #ffffff;
+  --fg-muted: #dbe7e5;
+  --fg-subtle: #b3c5c2;
+  --line: #537a75;
+  --surface-2: #24403d;
+  --bg-alt: #1c3330;
+}
+.contrast :focus-visible {
+  outline-width: 4px;
+}
+.reduce-motion *,
+.reduce-motion *::before,
+.reduce-motion *::after {
+  animation-duration: 0.001ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.001ms !important;
+  scroll-behavior: auto !important;
+}
+/* Mode anak: lebih besar & lebih ramah */
+.kids {
+  font-size: 1.05rem;
+}
+.kids button,
+.kids a {
+  letter-spacing: 0.01em;
+}
+.kids .arabic {
+  line-height: 2.1;
+}
+/* ---------- Cetak (sertifikat) ---------- */
+@media print {
+  aside,
+  header,
+  nav,
+  footer,
+  .no-print {
+    display: none !important;
+  }
+  #app-content {
+    padding: 0 !important;
+    max-width: none !important;
+  }
+  body {
+    background: #ffffff !important;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
